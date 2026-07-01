@@ -1,41 +1,14 @@
 services:
-  # FastAPI Web Service
+  # Monolithic FastAPI + Celery + Redis Web Service
   - type: web
     name: backend-devops-api
     runtime: docker
-    dockerfilePath: app/Dockerfile
-    dockerContext: app
-    dockerCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: Dockerfile
+    dockerContext: .
     envVars:
       - key: DATABASE_URL
-        sync: false # You will paste your Neon Connection String here in Render dashboard
+        sync: false
       - key: REDIS_URL
-        fromService:
-          name: redis-broker
-          type: redis
-          property: connectionString
+        value: redis://localhost:6379/0
       - key: GROQ_API_KEY
         sync: false
-
-  # Celery Worker Service
-  - type: worker
-    name: backend-devops-worker
-    runtime: docker
-    dockerfilePath: app/Dockerfile
-    dockerContext: app
-    dockerCommand: celery -A tasks.celery_app worker --loglevel=info
-    envVars:
-      - key: DATABASE_URL
-        sync: false # Links automatically to the env var set above
-      - key: REDIS_URL
-        fromService:
-          name: redis-broker
-          type: redis
-          property: connectionString
-      - key: GROQ_API_KEY
-        sync: false
-
-  # Redis Broker
-  - type: redis
-    name: redis-broker
-    ipAllowList: [] # Private access only
