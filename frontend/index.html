@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TxnLens — AI Transaction Processing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080808;      /* Sheryians pitch-black background */
+      --surface:     #121212;     /* Dark card background */
+      --surface-hover:#161616;
+      --border:      #222222;     /* Crisp thin border */
+      --border-focus:#444444;
+      --accent:      #FFC500;     /* Sheryians Signature Yellow/Gold */
+      --accent-muted:rgba(255, 197, 0, 0.15);
+      --green:       #10B981;
+      --red:         #EF4444;
+      --text:        #FFFFFF;     /* High contrast white text */
+      --text-muted:  #8E8E93;     /* Gray subtitles */
+      --font-title:  'Space Grotesk', sans-serif;
+      --font-body:   'Inter', sans-serif;
+      --font-mono:   'JetBrains Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 100px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 1.3rem;
+      background: var(--accent);
+      color: #000;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-name {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-name span {
+      color: var(--accent);
+    }
+
+    .header-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 6px;
+      color: var(--text-muted);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      border-color: var(--border-focus);
+    }
+
+    /* ── Upload Area ── */
+    #upload-zone {
+      border: 1px dashed var(--border-focus);
+      border-radius: 10px;
+      padding: 50px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #0d0d0d;
+    }
+    
+    #upload-zone:hover, #upload-zone.dragover {
+      border-color: var(--accent);
+      background: #111;
+    }
+
+    .upload-icon {
+      font-size: 36px;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    #upload-zone h2 {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    #upload-zone p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 10px 24px;
+      border-radius: 6px;
+      border: none;
+      background-color: var(--accent);
+      color: #000;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background-color: #e5b000;
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    #file-input { display: none; }
+
+    /* ── Status steps panel ── */
+    #status-panel {
+      display: none;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .steps {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0d0d0d;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .step {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-family: var(--font-title);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .step:last-child {
+      border-right: none;
+    }
+
+    .step.active {
+      color: var(--accent);
+      background: rgba(255, 197, 0, 0.04);
+    }
+
+    .step.done {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .step.done::after {
+      content: ' ✓';
+      color: var(--accent);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.83rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #222;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Metrics Grid ── */
+    #results { display: none; margin-top: 40px; }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media(max-width:768px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-focus);
+    }
+
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 1.6rem;
+      letter-spacing: -0.01em;
+    }
+
+    .metric-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ── Narrative card ── */
+    .narrative-card {
+      background: #0d0d0d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .narrative-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .narrative-card h3 {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--accent);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .narrative-card p {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #e3e3e3;
+    }
+
+    /* ── Badges ── */
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    
+    .badge-low { background: rgba(16, 185, 129, 0.1); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-medium { background: rgba(251, 191, 36, 0.1); color: var(--accent); border: 1px solid rgba(251, 191, 36, 0.2); }
+    .badge-high { background: rgba(239, 68, 68, 0.1); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.2); }
+    
+    .badge-danger { background: rgba(239, 68, 68, 0.12); color: var(--red); }
+    .badge-success { background: rgba(16, 185, 129, 0.12); color: var(--green); }
+
+    /* ── Merchant bars ── */
+    .merchant-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .merchant-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .merchant-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.83rem;
+    }
+
+    .merchant-name {
+      font-weight: 600;
+    }
+
+    .merchant-spend {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .bar-bg {
+      background: #1c1c1e;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      background: var(--accent);
+      height: 100%;
+      border-radius: 3px;
+      width: 0;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── Tables & Sections ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-bottom: 20px;
+    }
+
+    .section-counter {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      background: #1c1c1e;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 2px 10px;
+      border-radius: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #0d0d0d;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    
+    .search-input:focus {
+      border-color: var(--border-focus);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #0d0d0d;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      text-align: left;
+    }
+
+    th {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 14px 18px;
+      background: #0d0d0d;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      color: #dfdfdf;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255,255,255,0.015);
+    }
+
+    tr.anomaly-row td {
+      background: rgba(239, 68, 68, 0.02);
+    }
+
+    .status-pill {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    
+    .status-SUCCESS { background: rgba(16, 185, 129, 0.08); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.15); }
+    .status-FAILED  { background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15); }
+    .status-PENDING { background: rgba(251, 191, 36, 0.08); color: var(--accent); border: 1px solid rgba(251, 191, 36, 0.15); }
+
+    /* ── History Panel ── */
+    #jobs-section { margin-top: 60px; }
+    
+    .job-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .job-row:hover {
+      border-color: var(--border-focus);
+      background: var(--surface-hover);
+    }
+
+    .job-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .job-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .job-indicator.completed { background: var(--green); }
+    .job-indicator.failed { background: var(--red); }
+    .job-indicator.processing { background: var(--accent); animation: pulse 1.2s infinite; }
+    .job-indicator.pending { background: var(--text-muted); }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    .job-title {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .job-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .job-right {
+      text-align: right;
+    }
+
+    .job-stats {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+    }
+
+    .gap-block {
+      height: 32px;
+    }
+
+    /* ── Fade-in animation ── */
+    .fade-in {
+      animation: fIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes fIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">T</div>
+      <div class="brand-name">Txn<span>Lens</span></div>
+    </div>
+    <div class="header-badge">LOCAL ENVIRONMENT</div>
+  </header>
+
+  <!-- Upload Area Card -->
+  <div class="card">
+    <div id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <span class="upload-icon">⚡</span>
+      <h2>Import Transactions CSV</h2>
+      <p>Drag and drop your raw bank export here, or click to browse</p>
+      <button class="btn" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+        Select File
+      </button>
+    </div>
+    <input type="file" id="file-input" accept=".csv" />
+
+    <!-- Progress Steps -->
+    <div id="status-panel">
+      <div class="steps">
+        <div class="step" id="step-upload">Upload</div>
+        <div class="step" id="step-clean">Cleaning</div>
+        <div class="step" id="step-anomaly">Anomalies</div>
+        <div class="step" id="step-llm">AI Analysis</div>
+        <div class="step" id="step-done">Done</div>
+      </div>
+      <div class="status-indicator">
+        <div class="spinner" id="status-spinner"></div>
+        <span id="status-text">Uploading files...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Output -->
+  <div id="results"></div>
+
+  <!-- Job History Section -->
+  <div id="jobs-section">
+    <div class="section-header">
+      <span>Processing History</span>
+      <span class="section-counter" id="jobs-count">0</span>
+    </div>
+    <div id="jobs-list">
+      <div class="empty-state">No files processed yet. Upload a CSV to start analysis.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8001'
+    : 'https://backend-devops-api.onrender.com';
+  let activeJobId = null;
+  let statusPollTimer = null;
+
+  // ── Drag and Drop handling ──
+  const dropZone = document.getElementById('upload-zone');
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length) uploadFile(files[0]);
+  });
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files.length) uploadFile(e.target.files[0]);
+  });
+
+  async function uploadFile(file) {
+    if (!file.name.endsWith('.csv')) {
+      alert('Error: Please select a valid CSV file.');
+      return;
+    }
+    initializeProgressPanel();
+    setStepState('upload', 'active');
+    updateStatusText('Uploading ' + file.name + '...');
+
+    const dataPayload = new FormData();
+    dataPayload.append('file', file);
+
+    try {
+      const response = await fetch(`${API_URL}/jobs/upload`, {
+        method: 'POST',
+        body: dataPayload
+      });
+      if (!response.ok) throw new Error(await response.text());
+      const resData = await response.json();
+      activeJobId = resData.job_id;
+      setStepState('upload', 'done');
+      setStepState('clean', 'active');
+      updateStatusText('Cleaning formats, resolving currencies & removing duplicates...');
+      pollJobStatus(activeJobId);
+    } catch (err) {
+      updateStatusText('Failed: ' + err.message);
+    }
+  }
+
+  function pollJobStatus(jobId) {
+    clearInterval(statusPollTimer);
+    statusPollTimer = setInterval(async () => {
+      try {
+        const response = await fetch(`${API_URL}/jobs/${jobId}/status`);
+        const data = await response.json();
+        updateStepsUI(data.status);
+        if (data.status === 'completed') {
+          clearInterval(statusPollTimer);
+          setStepState('done', 'done');
+          document.getElementById('status-spinner').style.display = 'none';
+          updateStatusText('Execution complete in ' + computeDuration(data.created_at, data.completed_at));
+          await fetchAndRenderResults(jobId);
+          await refreshJobHistory();
+        } else if (data.status === 'failed') {
+          clearInterval(statusPollTimer);
+          document.getElementById('status-spinner').style.display = 'none';
+          updateStatusText('Process failed: ' + (data.error_message || 'API error'));
+        }
+      } catch (err) {}
+    }, 2500);
+  }
+
+  function updateStepsUI(status) {
+    if (status === 'processing') {
+      setStepState('clean', 'done');
+      setStepState('anomaly', 'done');
+      setStepState('llm', 'active');
+      updateStatusText('Running batched Groq classification & narrative summary...');
+    }
+  }
+
+  async function fetchAndRenderResults(jobId) {
+    const response = await fetch(`${API_URL}/jobs/${jobId}/results`);
+    const results = await response.json();
+    renderDashboard(results);
+  }
+
+  function renderDashboard(data) {
+    const s = data.summary || {};
+    const transactions = data.cleaned_transactions || [];
+    const anomalies = data.flagged_anomalies || [];
+
+    const riskBadgeClass = { low: 'badge-low', medium: 'badge-medium', high: 'badge-high' }[s.risk_level] || 'badge-medium';
+
+    // 1. Grid of KPI Cards
+    const gridHtml = `
+      <div class="metrics-grid fade-in">
+        <div class="metric-card">
+          <div class="metric-label">INR Spend Volume</div>
+          <div class="metric-value">₹${formatCurrencyValue(s.total_spend_inr)}</div>
+          <div class="metric-desc">Sum of clean transactions</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">USD Spend Volume</div>
+          <div class="metric-value">$${formatCurrencyValue(s.total_spend_usd)}</div>
+          <div class="metric-desc">Sum of foreign currencies</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Outliers Flagged</div>
+          <div class="metric-value" style="color:var(--red)">${s.anomaly_count}</div>
+          <div class="metric-desc">${((s.anomaly_count / (transactions.length || 1)) * 100).toFixed(1)}% anomaly rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Threat Assessment</div>
+          <div class="metric-value" style="font-size:1.15rem;margin-top:6px">
+            <span class="badge ${riskBadgeClass}">${s.risk_level || 'low'} Risk</span>
+          </div>
+          <div class="metric-desc">Assessed by AI Agent</div>
+        </div>
+      </div>`;
+
+    // 2. LLM Written Narrative
+    const narrativeHtml = s.narrative ? `
+      <div class="narrative-card fade-in">
+        <h3>🤖 Groq Pipeline Narrative Summary</h3>
+        <p>${s.narrative}</p>
+      </div>` : '';
+
+    // 3. Top Merchants (Sheryians layout style)
+    const merchants = s.top_merchants || [];
+    const maxVal = merchants[0]?.total_spend || 1;
+    const merchantsHtml = merchants.length ? `
+      <div class="card fade-in" style="margin-bottom:24px">
+        <div class="section-header">🏪 Top Merchants by Volume</div>
+        <div class="merchant-list">
+          ${merchants.map(m => `
+            <div class="merchant-item">
+              <div class="merchant-header">
+                <span class="merchant-name">${m.merchant}</span>
+                <span class="merchant-spend">₹${formatCurrencyValue(m.total_spend)}</span>
+              </div>
+              <div class="bar-bg">
+                <div class="bar-fill" style="width:${(m.total_spend / maxVal * 100).toFixed(1)}%"></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+
+    // 4. Anomaly Table
+    const anomalyTableHtml = anomalies.length ? `
+      <div class="card fade-in" style="margin-bottom:24px">
+        <div class="section-header" style="color:var(--red)">
+          <span>🚨 Flagged Anomalies</span>
+          <span class="section-counter" style="background:rgba(239,68,68,0.1);color:var(--red)">${anomalies.length}</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead><tr>
+              <th>TXN ID</th><th>Date</th><th>Merchant</th><th>Amount</th><th>Currency</th><th>Account</th><th>Outlier Reason</th>
+            </tr></thead>
+            <tbody>
+              ${anomalies.map(t => `
+                <tr class="anomaly-row">
+                  <td style="font-family:var(--font-mono)">${t.txn_id || '—'}</td>
+                  <td>${t.date || '—'}</td>
+                  <td><strong>${t.merchant}</strong></td>
+                  <td style="color:var(--red);font-weight:700">₹${formatCurrencyValue(t.amount)}</td>
+                  <td>${t.currency}</td>
+                  <td style="font-family:var(--font-mono)">${t.account_id}</td>
+                  <td style="font-size:0.78rem;color:var(--text-muted);white-space:normal;max-width:300px">${t.anomaly_reason || ''}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>` : '';
+
+    // 5. Cleaned Dataset Table with Search Filter
+    const allTableRows = transactions.map(t => `
+      <tr class="${t.is_anomaly ? 'anomaly-row' : ''}">
+        <td style="font-family:var(--font-mono)">${t.txn_id || '—'}</td>
+        <td>${t.date || '—'}</td>
+        <td><strong>${t.merchant}</strong></td>
+        <td style="font-family:var(--font-mono)">₹${formatCurrencyValue(t.amount)}</td>
+        <td>${t.currency}</td>
+        <td><span class="status-pill status-${t.status}">${t.status}</span></td>
+        <td>${t.category}</td>
+        <td style="font-family:var(--font-mono)">${t.account_id}</td>
+        <td>${t.is_anomaly ? '<span class="badge badge-high">Anomaly</span>' : '<span class="badge badge-low">OK</span>'}</td>
+      </tr>`).join('');
+
+    const cleanDatasetHtml = `
+      <div class="card fade-in">
+        <div class="section-header">
+          <span>📋 Cleaned Dataset Log</span>
+          <span class="section-counter">${transactions.length}</span>
+        </div>
+        <input class="search-input" id="table-search" placeholder="Type to filter merchant, category, account ID..." oninput="filterLogTable(this.value)"/>
+        <div class="table-container">
+          <table id="transactions-log-table">
+            <thead><tr>
+              <th>TXN ID</th><th>Date</th><th>Merchant</th><th>Amount</th><th>Currency</th><th>Status</th><th>Category</th><th>Account</th><th>Validation</th>
+            </tr></thead>
+            <tbody id="transactions-tbody">${allTableRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = gridHtml + narrativeHtml + merchantsHtml + anomalyTableHtml + cleanDatasetHtml;
+    resultsDiv.style.display = 'block';
+
+    // Animate custom bar graphs slightly after paint
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill').forEach(fill => {
+        fill.style.width = fill.style.width;
+      });
+    }, 50);
+  }
+
+  function filterLogTable(query) {
+    query = query.toLowerCase();
+    const rows = document.querySelectorAll('#transactions-tbody tr');
+    rows.forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
+  }
+
+  // ── History List Loader ──
+  async function refreshJobHistory() {
+    try {
+      const response = await fetch(`${API_URL}/jobs`);
+      const jobs = await response.json();
+      document.getElementById('jobs-count').textContent = jobs.length;
+      const historyList = document.getElementById('jobs-list');
+
+      if (!jobs.length) {
+        historyList.innerHTML = '<div class="empty-state">No files processed yet. Upload a CSV to start analysis.</div>';
+        return;
+      }
+
+      historyList.innerHTML = jobs.map(j => `
+        <div class="job-row" onclick="loadSelectedJob('${j.id}')">
+          <div class="job-left">
+            <div class="job-indicator ${j.status}"></div>
+            <div>
+              <div class="job-title">${j.filename}</div>
+              <div class="job-time">${new Date(j.created_at).toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="job-right">
+            <span class="badge ${j.status === 'completed' ? 'badge-low' : (j.status === 'failed' ? 'badge-high' : 'badge-medium')}">${j.status}</span>
+            <div class="job-stats">${j.row_count_clean ?? '—'} / ${j.row_count_raw} records parsed</div>
+          </div>
+        </div>`).join('');
+    } catch (err) {}
+  }
+
+  async function loadSelectedJob(jobId) {
+    activeJobId = jobId;
+    initializeProgressPanel();
+    setStepState('upload', 'done');
+    setStepState('clean', 'done');
+    setStepState('anomaly', 'done');
+    setStepState('llm', 'done');
+    setStepState('done', 'done');
+    document.getElementById('status-spinner').style.display = 'none';
+    updateStatusText('Displaying historic records');
+    await fetchAndRenderResults(jobId);
+  }
+
+  // ── UI States Helper Functions ──
+  function initializeProgressPanel() {
+    document.getElementById('status-panel').style.display = 'block';
+    document.getElementById('status-spinner').style.display = 'inline-block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('results').innerHTML = '';
+  }
+
+  function setStepState(id, state) {
+    const el = document.getElementById('step-' + id);
+    el.className = 'step ' + state;
+  }
+
+  function updateStatusText(txt) {
+    document.getElementById('status-text').textContent = txt;
+  }
+
+  function formatCurrencyValue(num) {
+    if (!num) return '0';
+    return Number(num).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  }
+
+  function computeDuration(started, finished) {
+    if (!started || !finished) return '';
+    const diff = Math.round((new Date(finished) - new Date(started)) / 1000);
+    return diff < 60 ? diff + 's' : Math.round(diff / 60) + 'm ' + (diff % 60) + 's';
+  }
+
+  // Auto load history
+  refreshJobHistory();
+</script>
+</body>
+</html>

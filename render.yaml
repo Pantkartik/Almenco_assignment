@@ -1,0 +1,49 @@
+services:
+  # FastAPI Web Service
+  - type: web
+    name: backend-devops-api
+    runtime: docker
+    dockerfilePath: app/Dockerfile
+    buildCommand: ""
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transaction-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: redis-broker
+          type: redis
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+
+  # Celery Worker Service
+  - type: worker
+    name: backend-devops-worker
+    runtime: docker
+    dockerfilePath: app/Dockerfile
+    buildCommand: ""
+    startCommand: celery -A tasks.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: transaction-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: redis-broker
+          type: redis
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+
+  # Redis Broker
+  - type: redis
+    name: redis-broker
+    ipAllowList: [] # Private access only
+
+databases:
+  - name: transaction-db
+    plan: free
