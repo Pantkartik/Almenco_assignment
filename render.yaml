@@ -8,9 +8,7 @@ services:
     dockerCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: transaction-db
-          property: connectionString
+        sync: false # You will paste your Neon Connection String here in Render dashboard
       - key: REDIS_URL
         fromService:
           name: redis-broker
@@ -28,9 +26,7 @@ services:
     dockerCommand: celery -A tasks.celery_app worker --loglevel=info
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: transaction-db
-          property: connectionString
+        sync: false # Links automatically to the env var set above
       - key: REDIS_URL
         fromService:
           name: redis-broker
@@ -43,7 +39,3 @@ services:
   - type: redis
     name: redis-broker
     ipAllowList: [] # Private access only
-
-databases:
-  - name: transaction-db
-    plan: free
