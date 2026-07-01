@@ -613,7 +613,7 @@
 </div>
 
 <script>
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8001'
     : 'https://backend-devops-api.onrender.com';
   let activeJobId = null;

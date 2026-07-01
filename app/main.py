@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List, Optional
@@ -35,6 +36,15 @@ app = FastAPI(
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse(url="/app/index.html")
+
+# Allow all origins so the Vercel frontend can reach the Render backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount the frontend static files
 import os
